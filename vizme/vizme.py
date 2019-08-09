@@ -5,6 +5,7 @@ import png
 import sys
 import math
 import argparse
+from colors import *
 
 
 def expand(v):
@@ -38,7 +39,9 @@ palette = [
 ]
 
 clamp = lambda value, minv, maxv: max(min(value, maxv), minv)
-palette = [expand(color) for color in palette]
+palettes = dict(
+    default=[expand(color) for color in palette]
+)
 
 
 def generate_image(width, height, fhandle):
@@ -78,16 +81,35 @@ def parse_args():
     parser.add_argument('-s', '--scale', dest='scale', default=1, type=int,
                         help='Scales the output PNG')
 
+    parser.add_argument('-g', '--greyscale', dest='greyscale', action='store_true',
+                        help='Sets the output to greyscale instead of using a palette')
+    parser.add_argument('-p', '--palette', dest='palette', choices=['default'], default='default',
+                        help='Sets the palette')
+    parser.add_argument('-d', '--default-color', dest='default_color', default=None, type=str,
+                        help="Background color (named f.e black, blue ,red)")
+    parser.add_argument('-n', '--no-color', dest='no_color', action='store_true',
+                        help='Disable any kind of palettes or coloring in terminal output')
+
     args = parser.parse_args()
+
+    # Paletting options
+    args.palette = palettes[args.palette]
+    if args.greyscale:
+        args.palette = None
+
+    # Output specific options
     if args.output == 'png':
         fname = args.FILE
         if fname == None:
-            args.FILE = sys.stdin
             fname = 'stream'
-        else:
-            args.FILE = open(fname, 'rb')
 
         args.output_fname = os.path.join(os.getcwd(), fname + ".png")
+
+    # Input data
+    if args.FILE == None:
+        args.FILE = sys.stdin
+    else:
+        args.FILE = open(args.FILE, 'rb')
 
     return args
 
@@ -95,14 +117,8 @@ def main():
     options = parse_args()
     flength = len(options.FILE.read())
 
-    print('length:', str(flength))
-
     calc_width = options.width  if flength >= options.width else flength
     calc_height = int(math.ceil(float(flength) / float(calc_width)))
-
-    print('height:', calc_height)
-    print('width:', calc_width)
-    print('scale:', options.scale)
 
     img_buffer = generate_image(
             width=calc_width,
@@ -110,6 +126,13 @@ def main():
             fhandle=options.FILE,
         )
     options.FILE.close()
+
+    def _get_tcolor(val):
+        if options.greyscale:
+            return '#%02x%02x%02x' % (val, val, val)
+        else:
+            pval = options.palette[val]
+            return '#%02x%02x%02x' % (pval[0], pval[1], pval[2])
 
     if options.output == 'png':
         if options.scale > 1:
@@ -122,9 +145,57 @@ def main():
         png_w = png.Writer(
             width=calc_width * options.scale,
             height=calc_height * options.scale,
-            palette=palette
-            #greyscale=True,
+            palette=options.palette,
+            greyscale=options.greyscale
         )
 
         png_w.write(file_handle, img_buffer)
         file_handle.close()
+
+    elif options.output == 'terminal':
+        for i in range(len(img_buffer)):
+            offset_str = color(
+                '%06d' % (i * calc_width),
+                fg='white' if not options.no_color else None,
+                bg=options.default_color if not options.no_color else None,
+                style='bold+underline' if not options.no_color else None
+            )
+
+            data_str = ""
+            rdata_str = ""
+            for dstr in img_buffer[i]:
+                data_str += color(
+                    '%02x' % dstr,
+                    fg=_get_tcolor(dstr) if not options.no_color else None,
+                    bg=options.default_color if not options.no_color else None,
+                    style=('bold' if dstr != 0 else '') if not options.no_color else None
+                )
+
+                rdata_str += color(
+                    '%c' % dstr if (dstr > 32 and dstr < 127) else str('.'),
+                    fg=_get_tcolor(dstr) if not options.no_color else None,
+                    bg=options.default_color if not options.no_color else None,
+                    style=('bold' * options.no_color if (dstr > 32 and dstr < 127) else '') if not options.no_color else None
+                )
+
+            print(
+                offset_str +
+                color(
+                    '  ',
+                    bg=(options.default_color) if not options.no_color else None
+                ) +
+                data_str +
+                color(
+                    '  ',
+                    bg=(options.default_color) if not options.no_color else None
+                ) +
+                    rdata_str
+            )
+            #rdata_str = ""
+            #for rdstr in
+            #print((color.BOLD + '{offset:06d}' + color.END + '  ' + '{data}  {rdata}').format(
+            #    offset=i * calc_width,
+            #    data=' '.join([ '%02x' % val for val in img_buffer[i]]),
+            #    rdata=' '.join(['%c' % val if (val > 32 and val < 127) else str('.') for val in img_buffer[i]])
+            #))
+        #33 - 126
