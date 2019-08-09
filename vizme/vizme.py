@@ -7,6 +7,28 @@ import math
 import argparse
 from colors import *
 
+from signal import signal, SIGPIPE, SIG_DFL
+
+# http://newbebweb.blogspot.com/2012/02/python-head-ioerror-errno-32-broken.html
+signal(SIGPIPE,SIG_DFL)
+
+# Taken from: https://mail.python.org/pipermail/tutor/2003-November/026645.html
+class Unbuffered(object):
+   def __init__(self, stream):
+       self.stream = stream
+   def write(self, data):
+       self.stream.write(data)
+       self.stream.flush()
+   def writelines(self, datas):
+       self.stream.writelines(datas)
+       self.stream.flush()
+   def __getattr__(self, attr):
+       return getattr(self.stream, attr)
+
+
+# Remove buffering, processing large datasets eats memory otherwise
+sys.stdout = Unbuffered(sys.stdout)
+
 
 def expand(v):
     """Split a 24 bit integer into 3 bytes
@@ -89,6 +111,8 @@ def parse_args():
                         help="Background color (named f.e black, blue ,red)")
     parser.add_argument('-n', '--no-color', dest='no_color', action='store_true',
                         help='Disable any kind of palettes or coloring in terminal output')
+    parser.add_argument('-b', '--block-display', dest='block_display', action="store_true",
+                        help="Set output to block display (ANSI)")
 
     args = parser.parse_args()
 
@@ -154,48 +178,71 @@ def main():
 
     elif options.output == 'terminal':
         for i in range(len(img_buffer)):
+            fg_color = 'white' if not options.no_color else None
+            bg_color = options.default_color if not options.no_color else None
+
+            if options.block_display:
+                tbg_color = bg_color
+                bg_color = fg_color
+                fg_color = tbg_color
+
+            style = 'bold+underline' if not options.no_color else None
             offset_str = color(
                 '%06d' % (i * calc_width),
-                fg='white' if not options.no_color else None,
-                bg=options.default_color if not options.no_color else None,
-                style='bold+underline' if not options.no_color else None
+                fg=fg_color,
+                bg=bg_color,
+                style=style
             )
 
             data_str = ""
             rdata_str = ""
             for dstr in img_buffer[i]:
+
+                fg_color = _get_tcolor(dstr) if not options.no_color else None
+                bg_color = options.default_color if not options.no_color else None
+
+                if options.block_display:
+                    tbg_color = bg_color
+                    bg_color = fg_color
+                    fg_color = tbg_color
+
+                style = ('' if dstr != 0 else '') if not options.no_color else None
                 data_str += color(
                     '%02x' % dstr,
-                    fg=_get_tcolor(dstr) if not options.no_color else None,
-                    bg=options.default_color if not options.no_color else None,
-                    style=('bold' if dstr != 0 else '') if not options.no_color else None
+                    fg=fg_color,
+                    bg=bg_color,
+                    style=style
                 )
 
+                style = ('' * options.no_color if (dstr > 32 and dstr < 127) else '') if not options.no_color else None
                 rdata_str += color(
                     '%c' % dstr if (dstr > 32 and dstr < 127) else str('.'),
-                    fg=_get_tcolor(dstr) if not options.no_color else None,
-                    bg=options.default_color if not options.no_color else None,
-                    style=('bold' * options.no_color if (dstr > 32 and dstr < 127) else '') if not options.no_color else None
+                    fg=fg_color,
+                    bg=bg_color,
+                    style=style
                 )
+
+            fg_color = None
+            bg_color = (options.default_color) if not options.no_color else None
+
+            if options.block_display:
+                tbg_color = bg_color
+                bg_color = fg_color
+                fg_color = tbg_color
 
             print(
                 offset_str +
                 color(
                     '  ',
-                    bg=(options.default_color) if not options.no_color else None
+                    bg=bg_color,
+                    fg=fg_color
                 ) +
                 data_str +
                 color(
                     '  ',
-                    bg=(options.default_color) if not options.no_color else None
+                    bg=bg_color,
+                    fg=fg_color
                 ) +
-                    rdata_str
+                rdata_str
             )
-            #rdata_str = ""
-            #for rdstr in
-            #print((color.BOLD + '{offset:06d}' + color.END + '  ' + '{data}  {rdata}').format(
-            #    offset=i * calc_width,
-            #    data=' '.join([ '%02x' % val for val in img_buffer[i]]),
-            #    rdata=' '.join(['%c' % val if (val > 32 and val < 127) else str('.') for val in img_buffer[i]])
-            #))
-        #33 - 126
+
