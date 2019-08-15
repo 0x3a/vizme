@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import vizme
 from importlib import import_module
 
 """
@@ -8,7 +9,7 @@ from importlib import import_module
 """
 
 palettes = {}
-for modname in os.listdir(os.path.join(os.path.abspath(__name__.replace('.', '/')))):
+for modname in os.listdir(os.path.join(os.path.dirname(vizme.__file__), 'palettes')):
     if modname.startswith('__'):
         continue
 

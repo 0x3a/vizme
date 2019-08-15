@@ -9,7 +9,7 @@ def read(fname):
 setup(
         name = 'vizme',
         python_requires='>=3',
-        version = '0.1.0',
+        version = '0.1.2',
         author = 'Yonathan Klijnsma',
         author_email = 'admin@0x3a.com',
         url = 'https://github.com/0x3a/vizme',
@@ -26,6 +26,5 @@ setup(
             'console_scripts': [
                 'vizme=vizme:main',
             ],
-        },
-        zip_safe=False,
+        }
      )
