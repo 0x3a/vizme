@@ -9,7 +9,7 @@ def read(fname):
 setup(
         name = 'vizme',
         python_requires='>=3',
-        version = '0.0.4',
+        version = '0.1.0',
         author = 'Yonathan Klijnsma',
         author_email = 'admin@0x3a.com',
         url = 'https://github.com/0x3a/vizme',
@@ -19,7 +19,8 @@ setup(
         long_description=read('README.md'),
         long_description_content_type='text/markdown',
         install_requires=[
-            'pypng'
+            'pypng',
+            'ansicolors'
         ],
         entry_points={
             'console_scripts': [
