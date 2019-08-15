@@ -86,4 +86,4 @@ cat /dev/random | head -c256 | vizme -w16 -s10 -p greyscale | imgcat
 ![Greyscale example](greyscale_example.png)
 
 ## Bugs
-Feel free to report issues, this 'utility' was build out of ease as I got frustrated with manual conversion of timestamps and strings the whole time.
+Feel free to report issues, this 'utility' was build out of ease as I needed something to visualize a data format I was trying to figure out.
