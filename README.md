@@ -50,11 +50,16 @@ Which gives us a bigger image:
 
 ![Example PNG 2](example_command_2.png)
 
+
+`vizme` also has a terminal output option which outputs ANSI full-block characters with the same color output.
+
+## Examples
+
 This is the very bare-basic of what you can do with `vizme`. While it doesn't have implementations for image manipulation
 or some specific data cutting from what it reads/writes you can do this yourself on the command-line quite easily.
 If you still want to see a feature in `vizme` feel free to raise tickets / pull requests.
 
-## Examples
+### Converting output
 
 Converting the PNG output to JPG (or any image format) which requires imagemagick:
 
@@ -62,12 +67,23 @@ Converting the PNG output to JPG (or any image format) which requires imagemagic
 cat /dev/random | head -c256 | vizme -w16 -s10 | convert /dev/stdin my_image.jpg
 ```
 
+### Preview output image in terminal 
+
 Previewing your output image in your terminal, required imgcat shell extension:
 ```text
 cat /dev/random | head -c256 | vizme -w16 -s10 | imgcat
 ```
 
 ![Imgcat Example](imgcat_example.png)
+
+### Greyscale output through palette changing
+
+`vizme` comes with two palettes by default. Standard output uses the `pixd` palette and also contains a greyscale:
+```text
+cat /dev/random | head -c256 | vizme -w16 -s10 -p greyscale | imgcat
+```
+
+![Greyscale example](greyscale_example.png)
 
 ## Bugs
 Feel free to report issues, this 'utility' was build out of ease as I got frustrated with manual conversion of timestamps and strings the whole time.
